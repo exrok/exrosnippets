@@ -2,16 +2,161 @@
   "name": "exrosnippets",
   "displayName": "exrosnippets",
   "description": "",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [ ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "properties": {
+        "exrosnippets.css_in_ts": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to enable CSS snippets in TypeScript files"
+        },
+        "exrosnippets.wrap_snippets": {
+          "type": "object",
+          "default": {
+            "rust": {
+              "for": [
+                "for $0 {\n",
+                "\n}"
+              ],
+              "if": [
+                "if $0 {\n",
+                "\n}"
+              ],
+              "closure": [
+                "let $0 = || {\n",
+                "\n};"
+              ]
+            },
+            "typescript": {
+              "for": [
+                "for ($0) {\n",
+                "\n}"
+              ],
+              "if": [
+                "if ($0) {\n",
+                "\n}"
+              ],
+              "try": [
+                "try {\n",
+                "\n} catch (e) {\t$0\n}"
+              ],
+              "element": [
+                "<$1>\n",
+                "\n<$1/>"
+              ],
+              "closure": [
+                "const $0 = () => {\n",
+                "\n}"
+              ]
+            }
+          },
+          "description": "A Map<Lang, Map<SnippetTrigger,[StartSnippetCode, EndSnippetCode]>>"
+        },
+        "exrosnippets.snippets": {
+          "type": "object",
+          "default": {
+            "rust": {
+              "paf": "pub async fn ${1:name}($0) {\n}\n",
+              "afn": "async fn ${1:name}($0) {\n}\n",
+              "f": "for $0 {\n}",
+              "@f": "@for $0 {\n}",
+              "@i": "@if $0 {\n}",
+              "l": "println(\"{}\", $0);",
+              "md": "impl Default for $1 {\nfn default() -> $1 {\n$0\n}\n}",
+              "mn": "impl $1 {\nfn new($0) -> $1 {\n}\n}",
+              "m": "match $1 {\n}",
+              "im": "impl $1 {\nfn $2($0) {\n}\n}",
+              "s": "struct $1 {\n}",
+              "i": "if $1 {\n}",
+              "il": "if let $1 = $2 {\n}",
+              "}": "} else {\n\t$0\n}",
+              "}i": "} else if $1 {\n}",
+              "fn": "fn ${1:name}($0) {\n}\n",
+              "pf": "pub fn ${1:name}($0) {\n}\n",
+              "ps": "pub struct ${1:name} {\n}\n"
+            },
+            "typescript": {
+              "fi": "for (let ${1:i} = 0; $1 < $0; $1++) {\n}",
+              "fo": "for (const ${1:value} of $0) {\n}",
+              "l": "console.log($0);",
+              "i": "if ($0) {\n}",
+              "m": "switch ($1) {\n\tcase $0:\n}",
+              "s": "interface $0 {\n}",
+              "ps": "export interface $0 {\n}",
+              "fn": "const $1 = ($0) => {\n}",
+              "af": "const $1 = async ($0) => {\n}",
+              "pf": "export const $1 = ($0) => {\n}",
+              "paf": "export const $1 = async ($0) => {\n}",
+              "}": "} else {\n\t$0\n}",
+              "}i": "} else if ($1) {\n}"
+            },
+            "css": {
+              "bg": "background: $0;",
+              "fdc": "flex-direction: column;",
+              "dib": "display: inline-block;",
+              "di": "display: inline;",
+              "db": "display: block;",
+              "c": "color: $0;",
+              "bgi": "background-image: $0;",
+              "l": "left: $0;",
+              "r": "right: $0;",
+              "u": "up: $0;",
+              "d": "down: $0;",
+              "pa": "position: absolute;",
+              "pf": "position: fixed;",
+              "pr": "position: relative;",
+              "df": "display: flex;",
+              "f": "flex: $0;",
+              "ft": "font: $0;",
+              "fts": "font-size: $0;",
+              "fs": "font-style: $0;",
+              "fsi": "font-style: italic;",
+              "fwb": "font-style: bold;",
+              "fdr": "flex-direction: row;",
+              "mh": "min-height: $0;",
+              "mh0": "min-height: 0;",
+              "mw0": "min-width: 0;",
+              "mw": "min-width: $0;",
+              "xh": "max-height: $0;",
+              "xh0": "max-height: 0;",
+              "xw0": "max-width: 0;",
+              "xw": "max-width: $0;",
+              "mt": "margin-top: $0;",
+              "mb": "margin-bottom: $0;",
+              "ml": "margin-left: $0;",
+              "mr": "margin-right: $0;",
+              "pt": "padding-top: $0;",
+              "pb": "padding-bottom: $0;",
+              "pl": "padding-left: $0;",
+              "bsb": "box-sizing: border-box;",
+              "jc": "justify-content: $0;",
+              "jcc": "justify-content: center;",
+              "aic": "align-items: center;",
+              "ai": "align-items: $0;",
+              "tdn": "text-decoration: none;",
+              "p": "padding: $0;",
+              "p0": "padding: 0;",
+              "m0": "margin: 0;",
+              "m": "margin: $0;",
+              "w": "width: $0;",
+              "h": "height: $0;",
+              "w1": "width: 100%;",
+              "h1": "height: 100%;"
+            }
+          },
+          "description": "A Map<Lang, Map<SnippetTrigger,SnippetCode>>"
+        }
+      }
+    },
     "commands": [
       {
         "command": "exrosnippets.surroundWith",

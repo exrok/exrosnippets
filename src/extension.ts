@@ -1,110 +1,10 @@
 import * as vscode from "vscode";
 import { spawn } from "child_process";
 
-const WRAP_SNIPPETS: Record<string, Record<string, [string, string]>> = {
-  rust: {
-    for: ["for $0 {\n", "\n}"],
-    if: ["if $0 {\n", "\n}"],
-    closure: ["let $0 = || {\n", "\n};"],
-  },
-  typescript: {
-    for: ["for ($0) {\n", "\n}"],
-    if: ["if ($0) {\n", "\n}"],
-    try: ["try {\n", "\n} catch (e) {\t$0\n}"],
-    element: ["<$1>\n", "\n<$1/>"],
-    closure: ["const $0 = () => {\n", "\n}"],
-  },
-};
-const SNIPPETS: Record<string, Record<string, string>> = {
-  rust: {
-    paf: "pub async fn ${1:name}($0) {\n}\n",
-    afn: "async fn ${1:name}($0) {\n}\n",
-    f: "for $0 {\n}",
-    "@f": "@for $0 {\n}",
-    "@i": "@if $0 {\n}",
-    l: 'println!("{}", $0);',
-    md: "impl Default for $1 {\nfn default() -> $1 {\n$0\n}\n}",
-    mn: "impl $1 {\nfn new($0) -> $1 {\n}\n}",
-    m: "match $1 {\n}",
-    im: "impl $1 {\nfn $2($0) {\n}\n}",
-    s: "struct $1 {\n}",
-    i: "if $1 {\n}",
-    il: "if let $1 = $2 {\n}",
-    "}": "} else {\n\t$0\n}",
-    "}i": "} else if $1 {\n}",
-    fn: "fn ${1:name}($0) {\n}\n",
-    pf: "pub fn ${1:name}($0) {\n}\n",
-    ps: "pub struct ${1:name} {\n}\n",
-  },
-  typescript: {
-    fi: "for (let ${1:i} = 0; $1 < $0; $1++) {\n}",
-    fo: "for (const ${1:value} of $0) {\n}",
-    l: "console.log($0);",
-    i: "if ($0) {\n}",
-    m: "switch ($1) {\n\tcase $0:\n}",
-    s: "interface $0 {\n}",
-    ps: "export interface $0 {\n}",
-    fn: "const $1 = ($0) => {\n}",
-    af: "const $1 = async ($0) => {\n}",
-    pf: "export const $1 = ($0) => {\n}",
-    paf: "export const $1 = async ($0) => {\n}",
-    "}": "} else {\n\t$0\n}",
-    "}i": "} else if ($1) {\n}",
-  },
-  css: {
-    bg: "background: $0;",
-    fdc: "flex-direction: column;",
-    dib: "display: inline-block;",
-    di: "display: inline;",
-    db: "display: block;",
-    c: "color: $0;",
-    bgi: "background-image: $0;",
-    l: "left: $0;",
-    r: "right: $0;",
-    u: "up: $0;",
-    d: "down: $0;",
-    pa: "position: absolute;",
-    pf: "position: fixed;",
-    pr: "position: relative;",
-    df: "display: flex;",
-    f: "flex: $0;",
-    ft: "font: $0;",
-    fts: "font-size: $0;",
-    fs: "font-style: $0;",
-    fsi: "font-style: italic;",
-    fwb: "font-style: bold;",
-    fdr: "flex-direction: row;",
-    mh: "min-height: $0;",
-    mh0: "min-height: 0;",
-    mw0: "min-width: 0;",
-    mw: "min-width: $0;",
-    xh: "max-height: $0;",
-    xh0: "max-height: 0;",
-    xw0: "max-width: 0;",
-    xw: "max-width: $0;",
-    mt: "margin-top: $0;",
-    mb: "margin-bottom: $0;",
-    ml: "margin-left: $0;",
-    mr: "margin-right: $0;",
-    pt: "padding-top: $0;",
-    pb: "padding-bottom: $0;",
-    pl: "padding-left: $0;",
-    bsb: "box-sizing: border-box;",
-    jc: "justify-content: $0;",
-    jcc: "justify-content: center;",
-    aic: "align-items: center;",
-    ai: "align-items: $0;",
-    tdn: "text-decoration: none;",
-    p: "padding: $0;",
-    p0: "padding: 0;",
-    m0: "margin: 0;",
-    m: "margin: $0;",
-    w: "width: $0;",
-    h: "height: $0;",
-    w1: "width: 100%;",
-    h1: "height: 100%;",
-  },
-};
+let WRAP_SNIPPETS: Record<string, Record<string, [string, string]>> = {};
+let SNIPPETS: Record<string, Record<string, string>> = {}
+let MAX_SNIPPET: number = 0
+let CSS_IN_TS: boolean = false;
 
 function cssPropertyCount(inx: string): number {
   const s = inx.toString(); //JIT optimization
@@ -137,6 +37,11 @@ function equalCount(inx: string): number {
 }
 
 function inCSS(editor: vscode.TextEditor): boolean {
+  // Disable the inCSS check because jank
+  if (!CSS_IN_TS) {
+    return false;
+  }
+
   const cursorPosition = editor.selection.active; // a vscode.Position
   const line_start = cursorPosition.line < 100 ? 0 : cursorPosition.line - 100;
   const text_before = editor.document.getText(
@@ -155,6 +60,7 @@ function inCSS(editor: vscode.TextEditor): boolean {
         return false;
       }
       if (text_before.indexOf("`", v + 6) !== start) {
+        // ` Hack not to detect CSS file.
         return false;
       }
       return true;
@@ -188,7 +94,7 @@ function tryExpandSnippet(): boolean {
     )
   );
   const prefix = text_before.trimStart();
-  if (prefix.length > 3) {
+  if (prefix.length > MAX_SNIPPET) {
     return false;
   }
   /// get current programming language
@@ -239,7 +145,37 @@ function tryExpandSnippet(): boolean {
   return true;
 }
 
+function setGlobalSnippets(snippets: Record<string, Record<string, string>>) {
+  SNIPPETS = snippets;
+  MAX_SNIPPET = 0;
+  for (const lang in snippets) {
+    const snippetSet = snippets[lang];
+    for (const key in snippetSet) {
+      if (MAX_SNIPPET < key.length) {
+        MAX_SNIPPET = key.length;
+      }
+    }
+  }
+}
+
 export function activate(context: vscode.ExtensionContext) {
+  const config = vscode.workspace.getConfiguration('exrosnippets');
+  setGlobalSnippets(config.get('snippets') as any)
+  WRAP_SNIPPETS = config.get('wrap_snippets') as any;
+
+  vscode.workspace.onDidChangeConfiguration((e) => {
+    if (e.affectsConfiguration('exrosnippets.snippets')) {
+      const config = vscode.workspace.getConfiguration('exrosnippets');
+      SNIPPETS = config.get('snippets') as any;
+      setGlobalSnippets(config.get('snippets') as any);
+    }
+    if (e.affectsConfiguration('exrosnippets.wrap_snippets')) {
+      const config = vscode.workspace.getConfiguration('exrosnippets');
+      WRAP_SNIPPETS = config.get('wrap_snippets') as any;
+    }
+    CSS_IN_TS = config.get('css_in_ts') as boolean;
+  });
+
   let openTerminal = vscode.commands.registerCommand(
     "exrosnippets.term",
     () => {
@@ -423,4 +359,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }
