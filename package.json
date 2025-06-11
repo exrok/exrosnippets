@@ -2,6 +2,7 @@
   "name": "exrosnippets",
   "displayName": "exrosnippets",
   "description": "",
+  "repository": "https://github.com/exrok/exrosnippets",
   "version": "0.4.2",
   "engines": {
     "vscode": "^1.85.0"
@@ -9,7 +10,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [ ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -173,6 +174,14 @@
       {
         "command": "exrosnippets.tcmd",
         "title": "TCmd"
+      },
+      {
+        "command": "exrosnippets.tcmdSelect",
+        "title": "TCmd: Select"
+      },
+      {
+        "command": "exrosnippets.tcmdSelectSave",
+        "title": "TCmd: Select & Save"
       },
       {
         "command": "exrosnippets.tcmdOpen",

@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { spawn } from "child_process";
 
 let WRAP_SNIPPETS: Record<string, Record<string, [string, string]>> = {};
-let SNIPPETS: Record<string, Record<string, string>> = {}
-let MAX_SNIPPET: number = 0
+let SNIPPETS: Record<string, Record<string, string>> = {};
+let MAX_SNIPPET: number = 0;
 let CSS_IN_TS: boolean = false;
 
 function cssPropertyCount(inx: string): number {
@@ -159,21 +159,21 @@ function setGlobalSnippets(snippets: Record<string, Record<string, string>>) {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  const config = vscode.workspace.getConfiguration('exrosnippets');
-  setGlobalSnippets(config.get('snippets') as any)
-  WRAP_SNIPPETS = config.get('wrap_snippets') as any;
+  const config = vscode.workspace.getConfiguration("exrosnippets");
+  setGlobalSnippets(config.get("snippets") as any);
+  WRAP_SNIPPETS = config.get("wrap_snippets") as any;
 
   vscode.workspace.onDidChangeConfiguration((e) => {
-    if (e.affectsConfiguration('exrosnippets.snippets')) {
-      const config = vscode.workspace.getConfiguration('exrosnippets');
-      SNIPPETS = config.get('snippets') as any;
-      setGlobalSnippets(config.get('snippets') as any);
+    if (e.affectsConfiguration("exrosnippets.snippets")) {
+      const config = vscode.workspace.getConfiguration("exrosnippets");
+      SNIPPETS = config.get("snippets") as any;
+      setGlobalSnippets(config.get("snippets") as any);
     }
-    if (e.affectsConfiguration('exrosnippets.wrap_snippets')) {
-      const config = vscode.workspace.getConfiguration('exrosnippets');
-      WRAP_SNIPPETS = config.get('wrap_snippets') as any;
+    if (e.affectsConfiguration("exrosnippets.wrap_snippets")) {
+      const config = vscode.workspace.getConfiguration("exrosnippets");
+      WRAP_SNIPPETS = config.get("wrap_snippets") as any;
     }
-    CSS_IN_TS = config.get('css_in_ts') as boolean;
+    CSS_IN_TS = config.get("css_in_ts") as boolean;
   });
 
   let openTerminal = vscode.commands.registerCommand(
@@ -190,6 +190,39 @@ export function activate(context: vscode.ExtensionContext) {
 
       editor.document.save().then(() => {
         spawn("urxvtc", ["-cd", parentDir, "-e", "fish"]);
+      });
+    }
+  );
+  let tcmdSelect = vscode.commands.registerCommand(
+    "exrosnippets.tcmdSelect",
+    () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return;
+      }
+      const filePath = editor.document.fileName;
+      editor.document.save().then(() => {
+        spawn("tcmd", ["--from", filePath, "do", "--tmux", "--dmenu"]);
+      });
+    }
+  );
+  let tcmdSelectSave = vscode.commands.registerCommand(
+    "exrosnippets.tcmdSelectSave",
+    () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return;
+      }
+      const filePath = editor.document.fileName;
+      editor.document.save().then(() => {
+        spawn("tcmd", [
+          "--from",
+          filePath,
+          "do",
+          "--tmux",
+          "--dmenu",
+          "--set-active",
+        ]);
       });
     }
   );
@@ -214,6 +247,7 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.workspace.openTextDocument(tcmdPath.trim()).then((doc) => {
             vscode.window.showTextDocument(doc);
           });
+          return;
         }
         const folder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
         if (!folder) {
@@ -240,13 +274,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
   let tcmd = vscode.commands.registerCommand("exrosnippets.tcmd", () => {
-    // get file path of current file
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       return;
     }
     const filePath = editor.document.fileName;
-    // save file
     editor.document.save().then(() => {
       spawn("tcmd", ["--from", filePath, "do", "--tmux"]);
     });
@@ -353,10 +385,12 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(openTerminal);
   context.subscriptions.push(tcmd);
   context.subscriptions.push(tcmdOpen);
+  context.subscriptions.push(tcmdSelect);
+  context.subscriptions.push(tcmdSelectSave);
   context.subscriptions.push(tcmdEdit);
   context.subscriptions.push(smartComplete);
   context.subscriptions.push(smartComplete2);
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {}
